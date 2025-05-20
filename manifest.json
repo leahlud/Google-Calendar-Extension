@@ -1,10 +1,22 @@
 {
-  "name": "Hello Extensions of the world!",
-  "description": "Base Level Extension",
+  "name": "Google Calendar Custom Colors",
+  "description": "Adds the ability for a calendar to have more than one custom color",
   "version": "1.0",
   "manifest_version": 3,
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://calendar.google.com/*",
+    "http://calendar.google.com/*"
+  ],
+  "content_scripts": [
+    {
+      "js": ["scripts/content.js"],
+      "matches": [ "https://calendar.google.com/*" ]
+    }
+  ],
   "action": {
-    "default_popup": "hello.html",
-    "default_icon": "extension_logo.png"
+    "default_popup": "popup.html",
+    "default_icon": "images/extension_logo.png"
   }
 }
+
