@@ -1,1 +1,1 @@
-# GCal-Custom-Colors
+# Custom Colors for Google Calendar 
