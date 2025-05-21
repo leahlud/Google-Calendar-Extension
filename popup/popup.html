@@ -27,9 +27,9 @@
     </div>
 
     <!-- color, text color, and color name selection -->
-    <div id="pickerContainer" style="display: none;"></div>
+    <div id="pickerContainer"></div>
 
-    <div id="colorDetails" style="display: none;" class="color-details">
+    <div id="colorDetails" class="color-details">
       <label>Hex:
         <input type="text" id="hexInput" maxlength="7" placeholder="#FFFFFF" value="#FF0000">
       </label>
@@ -37,8 +37,9 @@
       <label>
         Text Color:
         <select id="textColorSelect">
-          <option value="black">Black</option>
-          <option value="white">White</option>
+          <option value="" disabled selected hidden>Choose option</option>
+          <option value="black">black</option>
+          <option value="white">white</option>
         </select>
       </label>
 
@@ -46,6 +47,12 @@
         Name:
         <input type="text" id="colorNameInput" maxlength="20" placeholder="Color name">
       </label>
+    </div>
+
+    <!-- save / cancel buttons -->
+    <div class="color-actions">
+      <button id="cancelColor">Cancel</button>
+      <button id="saveColor">Save</button>
     </div>
 
     <!-- clear palette -->
