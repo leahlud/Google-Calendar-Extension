@@ -3,20 +3,31 @@
   "description": "Adds the ability for a calendar to have more than one custom color",
   "version": "1.0",
   "manifest_version": 3,
-  "permissions": ["storage"],
+   "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage"
+  ],
   "host_permissions": [
     "https://calendar.google.com/*",
     "http://calendar.google.com/*"
   ],
   "content_scripts": [
     {
-      "js": ["scripts/content.js"],
-      "matches": [ "https://calendar.google.com/*" ]
+      "js": [
+        "src/content.js"
+      ],
+      "matches": [
+        "https://calendar.google.com/*",
+        "http://calendar.google.com/*"
+      ]
     }
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": "images/extension_logo.png"
+    "default_popup": "popup/popup.html"
   }
 }
-
