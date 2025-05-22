@@ -15,7 +15,9 @@ const cancelButton = document.getElementById('cancelColor');
 
 let colorPicker;
 
+// on startup, populate the color grid from local storage
 populateColorGrid()
+
 
 function showColorPicker() {
     pickerContainer.style.display = 'flex';
@@ -31,28 +33,55 @@ function hideColorPicker() {
     clearColors.style.display = 'flex';
 }
 
-function saveColor(color) {
-    chrome.storage.local.get({ customColors: [] }, (result) => {
-        const updatedColors = [...result.customColors, color];
-        chrome.storage.local.set({ customColors: updatedColors });
+function saveColor(color, callback) {
+    chrome.storage.local.get({ customColors: {}, colorOrder: [] }, (result) => {
+        const { customColors, colorOrder } = result;
+
+        // check if custom color with that name already exists
+        if (color.colorName in customColors) {
+            callback(false);
+            return;
+        }
+
+        // add the custom color to local storage
+        customColors[color.colorName] = {
+            hex: color.hex,
+            textColor: color.textColor
+        };
+        colorOrder.push(color.colorName);
+        
+        chrome.storage.local.set({ customColors, colorOrder }, () => {
+            callback(true);
+        });
     });
 }
 
 function deleteColor(colorName) {
-    chrome.storage.local.get({ customColors: [] }, (result) => {
-        const updatedColors = result.customColors.filter( (c) => c.colorName !== colorName);
-        chrome.storage.local.set({ customColors: updatedColors });
+    chrome.storage.local.get({ customColors: {}, colorOrder: [] }, (result) => {
+        const { customColors, colorOrder } = result;
+
+        delete customColors[colorName]
+        const updatedOrder = colorOrder.filter(name => name !== colorName);
+
+        chrome.storage.local.set({ customColors, colorOrder : updatedOrder });
     });
 }
 
-function addColorToGrid(hex, colorName) {
+function addColorToGrid(hex, textColor, colorName) {
     // create and insert a .color-option for each saved color
     const div = document.createElement("div");
     div.className = "color-option";
     div.tabIndex = 0;
     div.style.backgroundColor = hex;
+    div.style.color = textColor;
     div.setAttribute("data-color", hex);
     div.setAttribute("data-title", colorName);
+
+    const hoverText = document.createElement("span");
+    hoverText.className = "hover-text";
+    hoverText.textContent = "Aa";
+
+    div.appendChild(hoverText);
 
     // TODO: event listener for deleting
     div.addEventListener("click", () => {
@@ -74,26 +103,25 @@ function removeColorFromGrid(colorName) {
 }
 
 function populateColorGrid() {
-    // clear all but the addColor button
+    // clear the inner html and push the add new custom color button
     colorGrid.innerHTML = "";
-    
-    // push the add new custom color button at the end
     colorGrid.appendChild(addColor);
 
-    chrome.storage.local.get({ customColors: [] }, (result) => {
-        const savedColors = result.customColors;
+    // fetch the custom colors from local storage
+    chrome.storage.local.get({ customColors: {}, colorOrder: [] }, (result) => {
+        const { customColors, colorOrder } = result;
 
-        // Create and insert a .color-option for each saved color
-        savedColors.forEach(({ hex, textColor, colorName }) => {
-            addColorToGrid(hex, colorName);
-        });
+        // create and insert a .color-option for each saved color (in order it was added)
+        for (const colorName of colorOrder) {
+            const { hex, textColor } = customColors[colorName];
+            addColorToGrid(hex, textColor, colorName);
+        }
     });
-    
 }
 
 clearColors.addEventListener("click", () => {
     if (confirm("Are you sure you want to delete all saved colors?")) {
-        chrome.storage.local.clear(() => {
+        chrome.storage.local.remove(["customColors", "colorOrder"], () => {
             // refresh grid after clearing
             populateColorGrid();
         });
@@ -113,7 +141,7 @@ addColor.addEventListener("click", () => {
         });
 
         // update hex value in input when new color is picked
-        colorPicker.on('color:change', function(color) {
+        colorPicker.on('color:change', function (color) {
             hexInput.value = color.hexString;
         });
 
@@ -146,14 +174,19 @@ saveButton.addEventListener("click", () => {
     }
 
     const newColor = { hex, textColor, colorName };
-    // console.log("Saved:", newColor);
 
     // save the color to persistant storage
-    saveColor(newColor);
-    addColorToGrid(hex, colorName);
+    saveColor(newColor, (success) => {
+        if (!success) {
+            alert(`A color named "${colorName}" already exists.`);
+            return;
+        }
 
-    // set visibility of elements
-    hideColorPicker();
+        addColorToGrid(hex, textColor, colorName);
+
+        // set visibility of elements
+        hideColorPicker();
+    });
 });
 
 cancelButton.addEventListener("click", () => {
