@@ -1,8 +1,11 @@
+const colorGrid = document.querySelector(".color-grid");
+
 const addColor = document.querySelector(".color-option.add-color");
 const clearColors = document.querySelector(".popup-clear");
 
 const pickerContainer = document.getElementById('pickerContainer');
 const colorDetails = document.getElementById('colorDetails');
+const hexInput = document.getElementById('hexInput');
 const textColorSelect = document.getElementById('textColorSelect');
 const colorNameInput = document.getElementById('colorNameInput');
 
@@ -11,6 +14,8 @@ const saveButton = document.getElementById('saveColor');
 const cancelButton = document.getElementById('cancelColor');
 
 let colorPicker;
+
+populateColorGrid()
 
 function showColorPicker() {
     pickerContainer.style.display = 'flex';
@@ -26,6 +31,69 @@ function hideColorPicker() {
     clearColors.style.display = 'flex';
 }
 
+function saveColor(color) {
+    chrome.storage.local.get({ customColors: [] }, (result) => {
+        const updatedColors = [...result.customColors, color];
+        chrome.storage.local.set({ customColors: updatedColors });
+    });
+}
+
+// function loadColors() {
+//     chrome.storage.local.get({ customColors: [] }, (result) => {
+//         customColors = result.customColors;
+//     });
+// }
+
+// function deleteColor(colorName) {
+//     customColors = customColors.filter(c => c.colorName !== colorName);
+//     chrome.storage.local.set({ customColors });
+// }
+
+function addColorToGrid(hex, colorName) {
+    // create and insert a .color-option for each saved color
+    const div = document.createElement("div");
+    div.className = "color-option";
+    div.tabIndex = 0;
+    div.style.backgroundColor = hex;
+    div.setAttribute("data-color", hex);
+    div.setAttribute("data-title", colorName);
+    div.title = colorName;
+
+    // TODO: event listener for deleting
+    div.addEventListener("click", () => {
+        
+    });
+
+    // append the color to the grid of colors
+    colorGrid.insertBefore(div, addColor);
+}
+
+function populateColorGrid() {
+    // clear all but the addColor button
+    colorGrid.innerHTML = "";
+    
+    // push the add new custom color button at the end
+    colorGrid.appendChild(addColor);
+
+    chrome.storage.local.get({ customColors: [] }, (result) => {
+        const savedColors = result.customColors;
+
+        // Create and insert a .color-option for each saved color
+        savedColors.forEach(({ hex, textColor, colorName }) => {
+            addColorToGrid(hex, colorName);
+        });
+    });
+}
+
+clearColors.addEventListener("click", () => {
+    if (confirm("Are you sure you want to delete all saved colors?")) {
+        chrome.storage.local.clear(() => {
+            console.log("All colors cleared.");
+            populateColorGrid(); // Refresh the grid after clearing
+        });
+    }
+});
+
 addColor.addEventListener("click", () => {
     // set visibility of elements
     showColorPicker();
@@ -36,6 +104,11 @@ addColor.addEventListener("click", () => {
             width: 150,
             color: "#FF0000", // default to red
             handleRadius: 9
+        });
+
+        // update hex value in input when new color is picked
+        colorPicker.on('color:change', function(color) {
+            hexInput.value = color.hexString;
         });
 
         // sync the hex value from the user back into the color picker
@@ -67,7 +140,11 @@ saveButton.addEventListener("click", () => {
     }
 
     const newColor = { hex, textColor, colorName };
-    console.log("Saved:", newColor);
+    // console.log("Saved:", newColor);
+
+    // save the color to persistant storage
+    saveColor(newColor);
+    addColorToGrid(hex, colorName);
 
     // set visibility of elements
     hideColorPicker();
