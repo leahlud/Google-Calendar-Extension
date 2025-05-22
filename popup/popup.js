@@ -38,16 +38,12 @@ function saveColor(color) {
     });
 }
 
-// function loadColors() {
-//     chrome.storage.local.get({ customColors: [] }, (result) => {
-//         customColors = result.customColors;
-//     });
-// }
-
-// function deleteColor(colorName) {
-//     customColors = customColors.filter(c => c.colorName !== colorName);
-//     chrome.storage.local.set({ customColors });
-// }
+function deleteColor(colorName) {
+    chrome.storage.local.get({ customColors: [] }, (result) => {
+        const updatedColors = result.customColors.filter( (c) => c.colorName !== colorName);
+        chrome.storage.local.set({ customColors: updatedColors });
+    });
+}
 
 function addColorToGrid(hex, colorName) {
     // create and insert a .color-option for each saved color
@@ -57,15 +53,24 @@ function addColorToGrid(hex, colorName) {
     div.style.backgroundColor = hex;
     div.setAttribute("data-color", hex);
     div.setAttribute("data-title", colorName);
-    div.title = colorName;
 
     // TODO: event listener for deleting
     div.addEventListener("click", () => {
-        
+        deleteColor(colorName);
+        removeColorFromGrid(colorName);
     });
 
     // append the color to the grid of colors
     colorGrid.insertBefore(div, addColor);
+}
+
+function removeColorFromGrid(colorName) {
+    const colorOptions = document.querySelectorAll(".color-option");
+    colorOptions.forEach(option => {
+        if (option.getAttribute("data-title") === colorName) {
+            option.remove();
+        }
+    });
 }
 
 function populateColorGrid() {
@@ -83,13 +88,14 @@ function populateColorGrid() {
             addColorToGrid(hex, colorName);
         });
     });
+    
 }
 
 clearColors.addEventListener("click", () => {
     if (confirm("Are you sure you want to delete all saved colors?")) {
         chrome.storage.local.clear(() => {
-            console.log("All colors cleared.");
-            populateColorGrid(); // Refresh the grid after clearing
+            // refresh grid after clearing
+            populateColorGrid();
         });
     }
 });

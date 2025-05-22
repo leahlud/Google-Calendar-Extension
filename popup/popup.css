@@ -12,7 +12,7 @@ html, body {
 }
 
 .custom-color-picker {
-    width: 275px;
+    width: 285px;
 }
 
 /* text and icons */
@@ -24,7 +24,6 @@ html, body {
 }
 
 .popup-clear {
-    border-top: 1.5px solid #dce0e6;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -47,8 +46,8 @@ html, body {
 /* colors */
 
 .color-grid {
-    border-bottom: 1px solid #dce0e6;
-    padding: 0 20px 12px 20px;
+    border-bottom: 1.5px solid #dce0e6;
+    padding: 0 20px 20px 20px;
     display: flex;
     flex-wrap: wrap;
     gap: 7px;
