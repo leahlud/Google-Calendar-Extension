@@ -15,21 +15,46 @@ function addExtensionColors(container) {
         const colorRow = document.createElement('div');
         colorRow.className = 'vbVGZb custom-color-injected';
 
-        colorOrder.forEach((name) => {
-            const { hex, textColor } = customColors[name];
+        colorOrder.forEach((colorName) => {
+            const { hex, textColor } = customColors[colorName];
 
             const div = document.createElement('div');
             div.className = 'A1wrjc kQuqUe pka1xd'; // copy of built-in color icon classes
             div.tabIndex = 0;
             div.setAttribute('role', 'menuitemradio');
-            div.setAttribute('aria-label', `${name}, custom event color`);
+            div.setAttribute('aria-label', `${colorName}, custom event color`);
             div.setAttribute('data-color', hex);
             div.style.backgroundColor = hex;
 
 
             // TODO for click handling
-            // div.addEventListener('click', () => {
-            // });
+            div.addEventListener('click', () => {
+                // Find the event ID from the color picker container
+                // Look for the closest color picker menu container that has data-eid
+                const colorPickerMenu = div.closest('[data-eid]');
+                
+                if (colorPickerMenu) {
+                    const eventId = colorPickerMenu.getAttribute('data-eid');
+                    
+                    // Store the mapping of eventId to color name in local storage
+                    chrome.storage.local.get(['eventColors'], (result) => {
+                        const eventColors = result.eventColors || {};
+                        eventColors[eventId] = colorName; // 'name' is the color name from the forEach loop
+                        
+                        chrome.storage.local.set({ eventColors }, () => {
+                            console.log(`Event ${eventId} mapped to custom color: ${colorName}`);
+                            
+                            // Close the color picker menu (similar to how Google's colors work)
+                            const menu = div.closest('.tB5Jxf-xl07Ob-XxIAqe');
+                            if (menu) {
+                                menu.style.display = 'none';
+                            }
+                        });
+                    });
+                } else {
+                    console.warn('Could not find event ID for color selection');
+                }
+            });
 
             colorRow.appendChild(div);
         });
