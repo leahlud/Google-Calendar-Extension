@@ -18,7 +18,9 @@ let colorPicker;
 // on startup, populate the color grid from local storage
 populateColorGrid()
 
-
+/**
+ * Displays the custom color picker UI.
+ */
 function showColorPicker() {
     pickerContainer.style.display = 'flex';
     colorDetails.style.display = 'flex';
@@ -26,6 +28,9 @@ function showColorPicker() {
     clearColors.style.display = 'none';
 }
 
+/**
+ * Hides the custom color picker UI.
+ */
 function hideColorPicker() {
     pickerContainer.style.display = 'none';
     colorDetails.style.display = 'none';
@@ -33,6 +38,11 @@ function hideColorPicker() {
     clearColors.style.display = 'flex';
 }
 
+/**
+ * Saves the new color to Chrome local storage.
+ * @param {String} color - The color object containing hex, textColor, and colorName.
+ * @param {Function} callback - Callback called with true if successful, false if color name exists.
+ */
 function saveColor(color, callback) {
     chrome.storage.local.get({ customColors: {}, colorOrder: [] }, (result) => {
         const { customColors, colorOrder } = result;
@@ -56,6 +66,10 @@ function saveColor(color, callback) {
     });
 }
 
+/**
+ * Deletes the saved color from Chrome local storage.
+ * @param {String} colorName - The name of the color to delete.
+ */
 function deleteColor(colorName) {
     chrome.storage.local.get({ customColors: {}, colorOrder: [] }, (result) => {
         const { customColors, colorOrder } = result;
@@ -67,6 +81,12 @@ function deleteColor(colorName) {
     });
 }
 
+/**
+ * Creates a color option element and adds it to the color grid.
+ * @param {string} hex - The background color hex code.
+ * @param {string} textColor - The color of the label text ("black" or "white").
+ * @param {string} colorName - The unique name for the color used for identification.
+ */
 function addColorToGrid(hex, textColor, colorName) {
     // create and insert a .color-option for each saved color
     const div = document.createElement("div");
@@ -76,6 +96,10 @@ function addColorToGrid(hex, textColor, colorName) {
     div.style.color = textColor;
     div.setAttribute("data-color", hex);
     div.setAttribute("data-title", colorName);
+    div.setAttribute("aria-label", `Color: ${colorName}`); // for accessibility
+    div.setAttribute("role", "button"); // for accessibility
+    div.setAttribute("title", colorName);
+
 
     const hoverText = document.createElement("span");
     hoverText.className = "hover-text";
@@ -83,7 +107,7 @@ function addColorToGrid(hex, textColor, colorName) {
 
     div.appendChild(hoverText);
 
-    // TODO: event listener for deleting
+    // add event listener for clicking the color option 
     div.addEventListener("click", () => {
         deleteColor(colorName);
         removeColorFromGrid(colorName);
@@ -93,15 +117,19 @@ function addColorToGrid(hex, textColor, colorName) {
     colorGrid.insertBefore(div, addColor);
 }
 
+/**
+ * Removes specified color from the color grid.
+ * @param {String} colorName - The name of the color to remove.
+ */
 function removeColorFromGrid(colorName) {
-    const colorOptions = document.querySelectorAll(".color-option");
-    colorOptions.forEach(option => {
-        if (option.getAttribute("data-title") === colorName) {
-            option.remove();
-        }
-    });
+    // find the matching color option and remove it
+    const colorOption = document.querySelector(`.color-option[data-title="${colorName}"]`);
+    if (colorOption) colorOption.remove();
 }
 
+/**
+ * Clears and repopulates the color grid using saved values from Chrome local storage.
+ */
 function populateColorGrid() {
     // clear the inner html and push the add new custom color button
     colorGrid.innerHTML = "";
@@ -119,6 +147,9 @@ function populateColorGrid() {
     });
 }
 
+/**
+ * Add click listener to clear button for removing user's color palette.
+ */
 clearColors.addEventListener("click", () => {
     if (confirm("Are you sure you want to delete all saved colors?")) {
         chrome.storage.local.remove(["customColors", "colorOrder"], () => {
@@ -128,6 +159,9 @@ clearColors.addEventListener("click", () => {
     }
 });
 
+/**
+ * Add click listener to add button for opening custom color popup.
+ */
 addColor.addEventListener("click", () => {
     // set visibility of elements
     showColorPicker();
@@ -155,6 +189,9 @@ addColor.addEventListener("click", () => {
     }
 });
 
+/**
+ * Add click listener to save button for saving the new custom color to user's color palette.
+ */
 saveButton.addEventListener("click", () => {
 
     // get inputs from color picker, select, and input
@@ -189,9 +226,10 @@ saveButton.addEventListener("click", () => {
     });
 });
 
+/**
+ * Add click listener to cancel button for exiting the custom color popup.
+ */
 cancelButton.addEventListener("click", () => {
     // set visibility of elements
     hideColorPicker();
 });
-
-
