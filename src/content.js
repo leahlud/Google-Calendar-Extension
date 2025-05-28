@@ -21,6 +21,77 @@ function setGoogleOfficialColor(eventId) {
 // for debugging
 console.log("Content script running on:", window.location.href);
 
+// Cache for storing custom colors to avoid repeated storage calls
+let customColorsCache = {};
+let eventColorsCache = {};
+let injectedCSS = null;
+
+// Initialize cache
+function initializeCache() {
+    chrome.storage.local.get(['customColors', 'eventColors'], (result) => {
+        customColorsCache = result.customColors || {};
+        eventColorsCache = result.eventColors || {};
+        console.log('Cache initialized:', { customColorsCache, eventColorsCache });
+        
+        // Inject CSS rules for all mapped events
+        injectCustomColorCSS();
+    });
+}
+
+// Inject CSS rules that will automatically apply to events as they're created
+function injectCustomColorCSS() {
+    // Remove existing injected CSS if any
+    if (injectedCSS) {
+        injectedCSS.remove();
+    }
+    
+    // Create new style element
+    injectedCSS = document.createElement('style');
+    injectedCSS.id = 'custom-event-colors';
+    
+    let cssRules = '';
+    
+    // Generate CSS rules for each event that has a custom color
+    Object.entries(eventColorsCache).forEach(([eventId, colorName]) => {
+        if (customColorsCache[colorName]) {
+            const { hex, textColor } = customColorsCache[colorName];
+            
+            // CSS rules for this specific event ID
+            cssRules += `
+                /* All-day events - DON'T touch .o4Z98 or .pmUZFe (that's the stripe) */
+                /* Only color the main content area */
+                [data-eventid="${eventId}"][data-stacked-layout-chip-container] .KF4T6b,
+                [data-eventid="${eventId}"][data-stacked-layout-chip-container] .UflSff {
+                    background-color: ${hex} !important;
+                    color: ${textColor} !important;
+                }
+                
+                /* Time-ranged events - avoid covering the left border stripe */
+                [data-eventid="${eventId}"].GTG3wb {
+                    background-color: ${hex} !important;
+                    border-radius: 8px !important;
+                }
+                [data-eventid="${eventId}"].GTG3wb .I0UMhf {
+                    color: ${textColor} !important;
+                }
+                [data-eventid="${eventId}"].GTG3wb .gVNoLb {
+                    color: ${textColor} !important;
+                }
+                /* Resize handle - don't apply background color to preserve stripe */
+                [data-eventid="${eventId}"].GTG3wb .leOeGd {
+                    border-bottom-left-radius: 8px !important;
+                    border-bottom-right-radius: 8px !important;
+                }
+            `;
+        }
+    });
+    
+    injectedCSS.textContent = cssRules;
+    document.head.appendChild(injectedCSS);
+    
+    console.log('Injected CSS for custom event colors');
+}
+
 function addEventColorMapping(eventId, colorName) {
     eventColorsCache[eventId] = colorName;
     chrome.storage.local.set({ eventColors: eventColorsCache });
