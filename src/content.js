@@ -24,13 +24,32 @@ function addExtensionColors(container) {
             div.setAttribute('role', 'menuitemradio');
             div.setAttribute('aria-label', `${colorName}, custom event color`);
             div.setAttribute('data-color', hex);
+            div.setAttribute('data-color-name', colorName);
+            div.setAttribute('aria-checked', 'false');
             div.style.backgroundColor = hex;
 
+            // Add checkmark icon (same structure as Google's colors)
+            const checkmark = document.createElement('i');
+            checkmark.className = 'google-material-icons notranslate lLCaB M8B6kc';
+            checkmark.setAttribute('aria-hidden', 'true');
+            checkmark.textContent = 'bigtop_done';
+            div.appendChild(checkmark);
 
-            // TODO for click handling
+            // Add tooltip (match Google's exact structure)
+            const tooltip = document.createElement('div');
+            tooltip.className = 'oMnJrf';
+            tooltip.setAttribute('aria-hidden', 'true');
+            tooltip.setAttribute('jscontroller', 'eg8UTd');
+            tooltip.setAttribute('jsaction', 'focus: eGiyHb;mouseenter: eGiyHb; touchstart: eGiyHb');
+            tooltip.setAttribute('data-text', colorName);
+            tooltip.setAttribute('data-tooltip-position', 'top');
+            tooltip.setAttribute('data-tooltip-vertical-offset', '0');
+            tooltip.setAttribute('data-tooltip-horizontal-offset', '0');
+            tooltip.setAttribute('data-tooltip-only-if-necessary', 'false');
+            div.appendChild(tooltip);
+
+            // Click handling for color selection
             div.addEventListener('click', () => {
-                // Find the event ID from the color picker container
-                // Look for the closest color picker menu container that has data-eid
                 const colorPickerMenu = div.closest('[data-eid]');
                 
                 if (colorPickerMenu) {
