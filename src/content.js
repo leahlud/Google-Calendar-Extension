@@ -138,19 +138,17 @@ function addExtensionColors(container) {
     // check if already inserted to prevent double injection
     if (container.querySelector('.custom-color-injected')) return;
 
-    chrome.storage.local.get(['customColors', 'colorOrder'], ({ customColors = {}, colorOrder = [] }) => {
-        // console.log('customColors:', customColors);
-        // console.log('colorOrder:', colorOrder);
+    const colorRow = document.createElement('div');
+    colorRow.className = 'vbVGZb custom-color-injected';
 
-        // reuse Google's row class for styling the extension's custom colors
-        const colorRow = document.createElement('div');
-        colorRow.className = 'vbVGZb custom-color-injected';
-
+    // Get the color order from cache
+    chrome.storage.local.get(['colorOrder'], ({ colorOrder = [] }) => {
         colorOrder.forEach((colorName) => {
-            const { hex, textColor } = customColors[colorName];
+            const { hex, textColor } = customColorsCache[colorName];
+            if (!hex) return; // Skip if color not found
 
             const div = document.createElement('div');
-            div.className = 'A1wrjc kQuqUe pka1xd'; // copy of built-in color icon classes
+            div.className = 'A1wrjc kQuqUe pka1xd';
             div.tabIndex = 0;
             div.setAttribute('role', 'menuitemradio');
             div.setAttribute('aria-label', `${colorName}, custom event color`);
@@ -186,21 +184,20 @@ function addExtensionColors(container) {
                 if (colorPickerMenu) {
                     const eventId = colorPickerMenu.getAttribute('data-eid');
                     
-                    // Store the mapping of eventId to color name in local storage
-                    chrome.storage.local.get(['eventColors'], (result) => {
-                        const eventColors = result.eventColors || {};
-                        eventColors[eventId] = colorName; // 'name' is the color name from the forEach loop
-                        
-                        chrome.storage.local.set({ eventColors }, () => {
-                            console.log(`Event ${eventId} mapped to custom color: ${colorName}`);
-                            
-                            // Close the color picker menu (similar to how Google's colors work)
-                            const menu = div.closest('.tB5Jxf-xl07Ob-XxIAqe');
-                            if (menu) {
-                                menu.style.display = 'none';
-                            }
-                        });
-                    });
+                    console.log(`Event ${eventId} mapped to custom color: ${colorName}`);
+                    
+                    // Set to official color first to ensure stripe exists, then apply custom color
+                    setGoogleOfficialColor(eventId);
+                    addEventColorMapping(eventId, colorName);
+                    
+                    // Update color picker selection visual state
+                    updateColorPickerSelection(colorPickerMenu, colorName);
+                    
+                    // Close the color picker menu
+                    const menu = div.closest('.tB5Jxf-xl07Ob-XxIAqe');
+                    if (menu) {
+                        menu.style.display = 'none';
+                    }
                 } else {
                     console.warn('Could not find event ID for color selection');
                 }
@@ -223,15 +220,43 @@ function addExtensionColors(container) {
     });
 }
 
+// Function to handle clicks on Google's official colors
+function handleOfficialColorClick(colorElement) {
+    const colorPickerMenu = colorElement.closest('[data-eid]');
+    if (colorPickerMenu) {
+        const eventId = colorPickerMenu.getAttribute('data-eid');
+        
+        // Remove custom color mapping when official color is selected
+        if (eventColorsCache[eventId]) {
+            console.log(`Removed custom color mapping for event ${eventId}`);
+            removeEventColorMapping(eventId);
+        }
+    }
+}
+
+// Intercept DOM modifications to catch new events and color pickers
 const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
             if (!(node instanceof HTMLElement)) continue;
 
+            // Skip popup/dialog elements to prevent coloring them
+            if (node.closest('.pdqVLc, .hMdQi, .nBzcnc') || 
+                node.matches('.pdqVLc, .hMdQi, .nBzcnc')) {
+                continue;
+            }
+
+            // Check for color picker
             const colorGrid = node.querySelector('.WQPNJc');
             if (colorGrid) {
                 console.log("Event color picker detected!");
                 addExtensionColors(colorGrid.parentElement);
+                
+                // Add click listeners to official colors
+                const officialColors = colorGrid.parentElement.querySelectorAll('.A1wrjc:not(.custom-color-injected .A1wrjc)');
+                officialColors.forEach(colorElement => {
+                    colorElement.addEventListener('click', () => handleOfficialColorClick(colorElement));
+                });
             }
         }
     }
