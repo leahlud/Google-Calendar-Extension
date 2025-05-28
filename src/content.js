@@ -237,4 +237,48 @@ const observer = new MutationObserver((mutations) => {
     }
 });
 
-observer.observe(document.body, { childList: true, subtree: true });
+// Initialize everything
+function initialize() {
+    // Initialize cache first
+    initializeCache();
+    
+    // Start observing
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// Listen for storage changes to update cache and CSS
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local') {
+        let needsCSSUpdate = false;
+        
+        if (changes.customColors) {
+            customColorsCache = changes.customColors.newValue || {};
+            needsCSSUpdate = true;
+        }
+        if (changes.eventColors) {
+            eventColorsCache = changes.eventColors.newValue || {};
+            needsCSSUpdate = true;
+        }
+        
+        if (needsCSSUpdate) {
+            injectCustomColorCSS();
+        }
+    }
+});
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+} else {
+    initialize();
+}
+
+// Handle navigation changes in single-page app
+let currentUrl = window.location.href;
+setInterval(() => {
+    if (window.location.href !== currentUrl) {
+        currentUrl = window.location.href;
+        console.log('URL changed, regenerating CSS');
+        injectCustomColorCSS();
+    }
+}, 1000);
