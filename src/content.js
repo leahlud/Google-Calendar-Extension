@@ -21,7 +21,19 @@ function setGoogleOfficialColor(eventId) {
 // for debugging
 console.log("Content script running on:", window.location.href);
 
+function addEventColorMapping(eventId, colorName) {
+    eventColorsCache[eventId] = colorName;
+    chrome.storage.local.set({ eventColors: eventColorsCache });
+    // Regenerate CSS to include new mapping
+    injectCustomColorCSS();
+}
 
+function removeEventColorMapping(eventId) {
+    delete eventColorsCache[eventId];
+    chrome.storage.local.set({ eventColors: eventColorsCache });
+    // Regenerate CSS without the removed mapping
+    injectCustomColorCSS();
+}
 
 function addExtensionColors(container) {
     // check if already inserted to prevent double injection
