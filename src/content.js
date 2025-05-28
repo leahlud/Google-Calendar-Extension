@@ -106,6 +106,34 @@ function removeEventColorMapping(eventId) {
     injectCustomColorCSS();
 }
 
+// Function to handle color picker interactions and fix checkmarks
+function updateColorPickerSelection(colorPickerMenu, selectedColorName) {
+    // Remove checkmarks from all color options
+    const allColorOptions = colorPickerMenu.querySelectorAll('[role="menuitemradio"]');
+    allColorOptions.forEach(option => {
+        option.setAttribute('aria-checked', 'false');
+        const checkmark = option.querySelector('.eO2Zfd, .lLCaB.M8B6kc');
+        if (checkmark) {
+            checkmark.classList.remove('eO2Zfd');
+        }
+    });
+    
+    // Add checkmark to selected custom color
+    if (selectedColorName) {
+        const customColorOptions = colorPickerMenu.querySelectorAll('.custom-color-injected [role="menuitemradio"]');
+        customColorOptions.forEach(option => {
+            const colorName = option.getAttribute('data-color-name');
+            if (colorName === selectedColorName) {
+                option.setAttribute('aria-checked', 'true');
+                const checkmark = option.querySelector('.lLCaB');
+                if (checkmark) {
+                    checkmark.classList.add('eO2Zfd');
+                }
+            }
+        });
+    }
+}
+
 function addExtensionColors(container) {
     // check if already inserted to prevent double injection
     if (container.querySelector('.custom-color-injected')) return;
@@ -182,6 +210,16 @@ function addExtensionColors(container) {
         });
 
         container.appendChild(colorRow);
+        
+        // Check if current event has a custom color and update selection
+        const colorPickerMenu = container.closest('[data-eid]');
+        if (colorPickerMenu) {
+            const eventId = colorPickerMenu.getAttribute('data-eid');
+            const currentColorName = eventColorsCache[eventId];
+            if (currentColorName) {
+                updateColorPickerSelection(colorPickerMenu, currentColorName);
+            }
+        }
     });
 }
 
