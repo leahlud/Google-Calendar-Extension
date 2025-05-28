@@ -1,3 +1,23 @@
+// Function to trigger Google's official color selection to ensure stripe exists
+function setGoogleOfficialColor(eventId) {
+    const colorPickerMenu = document.querySelector(`[data-eid="${eventId}"]`);
+    if (!colorPickerMenu) {
+        console.warn('Could not find color picker for event:', eventId);
+        return false;
+    }
+    
+    // Use Tomato red to ensure stripe is created
+    const tomatoColorElement = colorPickerMenu.querySelector('[data-color="#D50000"]');
+    
+    if (tomatoColorElement) {
+        tomatoColorElement.click();
+        console.log(`Set event ${eventId} to official tomato color`);
+        return true;
+    }
+    
+    console.warn('Could not find tomato color option');
+    return false;
+}
 // for debugging
 console.log("Content script running on:", window.location.href);
 
