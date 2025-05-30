@@ -138,6 +138,22 @@ function addExtensionColors(container) {
     // check if already inserted to prevent double injection
     if (container.querySelector('.custom-color-injected')) return;
 
+    // Check if this is specifically an EVENT color picker, not a calendar color picker
+    const colorPickerMenu = container.closest('[data-eid]');
+    if (!colorPickerMenu) {
+        console.log('Skipping color injection - not an event color picker');
+        return;
+    }
+
+    // Additional safety check: make sure it's the right type of menu
+    const menuContainer = container.closest('[role="menu"]');
+    if (!menuContainer) {
+        console.log('Skipping color injection - not an event context menu');
+        return;
+    }
+
+    console.log('Adding custom colors to event color picker');
+
     const colorRow = document.createElement('div');
     colorRow.className = 'vbVGZb custom-color-injected';
 
@@ -179,27 +195,21 @@ function addExtensionColors(container) {
 
             // Click handling for color selection
             div.addEventListener('click', () => {
-                const colorPickerMenu = div.closest('[data-eid]');
+                const eventId = colorPickerMenu.getAttribute('data-eid');
                 
-                if (colorPickerMenu) {
-                    const eventId = colorPickerMenu.getAttribute('data-eid');
-                    
-                    console.log(`Event ${eventId} mapped to custom color: ${colorName}`);
-                    
-                    // Set to official color first to ensure stripe exists, then apply custom color
-                    setGoogleOfficialColor(eventId);
-                    addEventColorMapping(eventId, colorName);
-                    
-                    // Update color picker selection visual state
-                    updateColorPickerSelection(colorPickerMenu, colorName);
-                    
-                    // Close the color picker menu
-                    const menu = div.closest('.tB5Jxf-xl07Ob-XxIAqe');
-                    if (menu) {
-                        menu.style.display = 'none';
-                    }
-                } else {
-                    console.warn('Could not find event ID for color selection');
+                console.log(`Event ${eventId} mapped to custom color: ${colorName}`);
+                
+                // Set to official color first to ensure stripe exists, then apply custom color
+                setGoogleOfficialColor(eventId);
+                addEventColorMapping(eventId, colorName);
+                
+                // Update color picker selection visual state
+                updateColorPickerSelection(colorPickerMenu, colorName);
+                
+                // Close the color picker menu
+                const menu = div.closest('.tB5Jxf-xl07Ob-XxIAqe');
+                if (menu) {
+                    menu.style.display = 'none';
                 }
             });
 
@@ -209,13 +219,10 @@ function addExtensionColors(container) {
         container.appendChild(colorRow);
         
         // Check if current event has a custom color and update selection
-        const colorPickerMenu = container.closest('[data-eid]');
-        if (colorPickerMenu) {
-            const eventId = colorPickerMenu.getAttribute('data-eid');
-            const currentColorName = eventColorsCache[eventId];
-            if (currentColorName) {
-                updateColorPickerSelection(colorPickerMenu, currentColorName);
-            }
+        const eventId = colorPickerMenu.getAttribute('data-eid');
+        const currentColorName = eventColorsCache[eventId];
+        if (currentColorName) {
+            updateColorPickerSelection(colorPickerMenu, currentColorName);
         }
     });
 }
