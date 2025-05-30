@@ -115,7 +115,6 @@ function removeEventColorMapping(eventId) {
     injectCustomColorCSS();
 }
 
-// Function to handle color picker interactions and fix checkmarks
 function updateColorPickerSelection(colorPickerMenu, selectedColorName) {
     // Remove checkmarks from all color options
     const allColorOptions = colorPickerMenu.querySelectorAll('[role="menuitemradio"]');
@@ -129,7 +128,8 @@ function updateColorPickerSelection(colorPickerMenu, selectedColorName) {
     
     // Add checkmark to selected custom color
     if (selectedColorName) {
-        const customColorOptions = colorPickerMenu.querySelectorAll('.custom-color-injected [role="menuitemradio"]');
+        // Find custom colors by data-color-name attribute 
+        const customColorOptions = colorPickerMenu.querySelectorAll('[data-color-name]');
         customColorOptions.forEach(option => {
             const colorName = option.getAttribute('data-color-name');
             if (colorName === selectedColorName) {
@@ -157,22 +157,9 @@ function addExtensionColors(container) {
 
     console.log('Adding custom colors to event color picker');
 
-    const colorRow = document.createElement('div');
-    colorRow.className = 'vbVGZb custom-color-injected';
-
-
-
-    // check how many of Google's colors there are (11 or 12)
-
-    var nodes = div.querySelectorAll('[move_id]');
-    var first = nodes[0];
-    var last = nodes[nodes.length- 1];
-
-    document.getElementById("myDIV").childElementCount;
-
-
-
-    var colorsPerRow = container.parentElement.getAttribute("data")
+    var colorsPerRow = container.parentElement.getAttribute("data-colors-per-row");
+    var colorRowIndex = 1;
+    var colorRow = container.children[colorRowIndex];
 
     // Get the color order from cache
     colorOrderCache.forEach((colorName) => {
@@ -229,11 +216,22 @@ function addExtensionColors(container) {
             }
         });
 
+        while (colorRow.children.length >= colorsPerRow) {
+
+            // check if a new row needs to be created 
+            if (colorRowIndex == container.children.length - 1) {
+                colorRow = document.createElement('div');
+                colorRow.className = 'vbVGZb custom-color-injected';
+                container.appendChild(colorRow);
+            }
+            colorRowIndex++;
+            colorRow = container.children[colorRowIndex];
+        }
+
         colorRow.appendChild(div);
+        
     });
 
-    container.appendChild(colorRow);
-    
     // Check if current event has a custom color and update selection
     const eventId = colorPickerMenu.getAttribute('data-eid');
     const currentColorName = eventColorsCache[eventId];
@@ -275,7 +273,7 @@ const observer = new MutationObserver((mutations) => {
                 addExtensionColors(colorGrid.parentElement);
                 
                 // Add click listeners to official colors
-                const officialColors = colorGrid.parentElement.querySelectorAll('.A1wrjc:not(.custom-color-injected .A1wrjc)');
+                const officialColors = colorGrid.parentElement.querySelectorAll('.A1wrjc:not([data-color-name])');
                 officialColors.forEach(colorElement => {
                     colorElement.addEventListener('click', () => handleOfficialColorClick(colorElement));
                 });
