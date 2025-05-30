@@ -1,7 +1,7 @@
 const colorGrid = document.querySelector(".color-grid");
 
 const addColor = document.querySelector(".color-option.add-color");
-const clearColors = document.querySelector(".popup-clear");
+const clearColors = document.querySelector(".clear-actions");
 
 const pickerContainer = document.getElementById('pickerContainer');
 const colorDetails = document.getElementById('colorDetails');
@@ -233,6 +233,8 @@ cancelButton.addEventListener("click", () => {
     // set visibility of elements
     hideColorPicker();
 });
+
+const DEBUG_MODE = true;
 
 if (DEBUG_MODE && typeof addDebugControls === 'function') {
     if (document.readyState === 'loading') {
