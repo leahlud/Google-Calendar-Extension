@@ -24,14 +24,16 @@ console.log("Content script running on:", window.location.href);
 // Cache for storing custom colors to avoid repeated storage calls
 let customColorsCache = {};
 let eventColorsCache = {};
+let colorOrderCache = {};
 let injectedCSS = null;
 
 // Initialize cache
 function initializeCache() {
-    chrome.storage.local.get(['customColors', 'eventColors'], (result) => {
+    chrome.storage.local.get(['customColors', 'eventColors', 'colorOrder'], (result) => {
         customColorsCache = result.customColors || {};
         eventColorsCache = result.eventColors || {};
-        console.log('Cache initialized:', { customColorsCache, eventColorsCache });
+        colorOrderCache = result.colorOrder || {};
+        console.log('Cache initialized:', { customColorsCache, eventColorsCache, colorOrderCache });
         
         // Inject CSS rules for all mapped events
         injectCustomColorCSS();
@@ -71,12 +73,19 @@ function injectCustomColorCSS() {
                     background-color: ${hex} !important;
                     border-radius: 8px !important;
                 }
-                [data-eventid="${eventId}"].GTG3wb .I0UMhf {
+
+                [data-eventid="${eventId}"].GTG3wb .I0UMhf { 
+                    /* event title */
                     color: ${textColor} !important;
                 }
                 [data-eventid="${eventId}"].GTG3wb .gVNoLb {
+                    /* time */
                     color: ${textColor} !important;
                 }
+                [data-eventid="${eventId}"].GTG3wb .K9QN7e {
+                    /* location */
+                    color: ${textColor} !important;
+                } 
                 /* Resize handle - don't apply background color to preserve stripe */
                 [data-eventid="${eventId}"].GTG3wb .leOeGd {
                     border-bottom-left-radius: 8px !important;
@@ -139,16 +148,10 @@ function addExtensionColors(container) {
     if (container.querySelector('.custom-color-injected')) return;
 
     // Check if this is specifically an EVENT color picker, not a calendar color picker
+    // TODO: doesnt work for editing events
     const colorPickerMenu = container.closest('[data-eid]');
     if (!colorPickerMenu) {
         console.log('Skipping color injection - not an event color picker');
-        return;
-    }
-
-    // Additional safety check: make sure it's the right type of menu
-    const menuContainer = container.closest('[role="menu"]');
-    if (!menuContainer) {
-        console.log('Skipping color injection - not an event context menu');
         return;
     }
 
@@ -157,74 +160,86 @@ function addExtensionColors(container) {
     const colorRow = document.createElement('div');
     colorRow.className = 'vbVGZb custom-color-injected';
 
+
+
+    // check how many of Google's colors there are (11 or 12)
+
+    var nodes = div.querySelectorAll('[move_id]');
+    var first = nodes[0];
+    var last = nodes[nodes.length- 1];
+
+    document.getElementById("myDIV").childElementCount;
+
+
+
+    var colorsPerRow = container.parentElement.getAttribute("data")
+
     // Get the color order from cache
-    chrome.storage.local.get(['colorOrder'], ({ colorOrder = [] }) => {
-        colorOrder.forEach((colorName) => {
-            const { hex, textColor } = customColorsCache[colorName];
-            if (!hex) return; // Skip if color not found
+    colorOrderCache.forEach((colorName) => {
+        const { hex, textColor } = customColorsCache[colorName];
+        if (!hex) return; // Skip if color not found
 
-            const div = document.createElement('div');
-            div.className = 'A1wrjc kQuqUe pka1xd';
-            div.tabIndex = 0;
-            div.setAttribute('role', 'menuitemradio');
-            div.setAttribute('aria-label', `${colorName}, custom event color`);
-            div.setAttribute('data-color', hex);
-            div.setAttribute('data-color-name', colorName);
-            div.setAttribute('aria-checked', 'false');
-            div.style.backgroundColor = hex;
+        const div = document.createElement('div');
+        div.className = 'A1wrjc kQuqUe pka1xd';
+        div.tabIndex = 0;
+        div.setAttribute('role', 'menuitemradio');
+        div.setAttribute('aria-label', `${colorName}, custom event color`);
+        div.setAttribute('data-color', hex);
+        div.setAttribute('data-color-name', colorName);
+        div.setAttribute('aria-checked', 'false');
+        div.style.backgroundColor = hex;
 
-            // Add checkmark icon (same structure as Google's colors)
-            const checkmark = document.createElement('i');
-            checkmark.className = 'google-material-icons notranslate lLCaB M8B6kc';
-            checkmark.setAttribute('aria-hidden', 'true');
-            checkmark.textContent = 'bigtop_done';
-            div.appendChild(checkmark);
+        // Add checkmark icon (same structure as Google's colors)
+        const checkmark = document.createElement('i');
+        checkmark.className = 'google-material-icons notranslate lLCaB M8B6kc';
+        checkmark.setAttribute('aria-hidden', 'true');
+        checkmark.textContent = 'bigtop_done';
+        div.appendChild(checkmark);
 
-            // Add tooltip (match Google's exact structure)
-            const tooltip = document.createElement('div');
-            tooltip.className = 'oMnJrf';
-            tooltip.setAttribute('aria-hidden', 'true');
-            tooltip.setAttribute('jscontroller', 'eg8UTd');
-            tooltip.setAttribute('jsaction', 'focus: eGiyHb;mouseenter: eGiyHb; touchstart: eGiyHb');
-            tooltip.setAttribute('data-text', colorName);
-            tooltip.setAttribute('data-tooltip-position', 'top');
-            tooltip.setAttribute('data-tooltip-vertical-offset', '0');
-            tooltip.setAttribute('data-tooltip-horizontal-offset', '0');
-            tooltip.setAttribute('data-tooltip-only-if-necessary', 'false');
-            div.appendChild(tooltip);
+        // Add tooltip (match Google's exact structure)
+        const tooltip = document.createElement('div');
+        tooltip.className = 'oMnJrf';
+        tooltip.setAttribute('aria-hidden', 'true');
+        tooltip.setAttribute('jscontroller', 'eg8UTd');
+        tooltip.setAttribute('jsaction', 'focus: eGiyHb;mouseenter: eGiyHb; touchstart: eGiyHb');
+        tooltip.setAttribute('data-text', colorName);
+        tooltip.setAttribute('data-tooltip-position', 'top');
+        tooltip.setAttribute('data-tooltip-vertical-offset', '0');
+        tooltip.setAttribute('data-tooltip-horizontal-offset', '0');
+        tooltip.setAttribute('data-tooltip-only-if-necessary', 'false');
+        div.appendChild(tooltip);
 
-            // Click handling for color selection
-            div.addEventListener('click', () => {
-                const eventId = colorPickerMenu.getAttribute('data-eid');
-                
-                console.log(`Event ${eventId} mapped to custom color: ${colorName}`);
-                
-                // Set to official color first to ensure stripe exists, then apply custom color
-                setGoogleOfficialColor(eventId);
-                addEventColorMapping(eventId, colorName);
-                
-                // Update color picker selection visual state
-                updateColorPickerSelection(colorPickerMenu, colorName);
-                
-                // Close the color picker menu
-                const menu = div.closest('.tB5Jxf-xl07Ob-XxIAqe');
-                if (menu) {
-                    menu.style.display = 'none';
-                }
-            });
-
-            colorRow.appendChild(div);
+        // Click handling for color selection
+        div.addEventListener('click', () => {
+            const eventId = colorPickerMenu.getAttribute('data-eid');
+            
+            console.log(`Event ${eventId} mapped to custom color: ${colorName}`);
+            
+            // Set to official color first to ensure stripe exists, then apply custom color
+            setGoogleOfficialColor(eventId);
+            addEventColorMapping(eventId, colorName);
+            
+            // Update color picker selection visual state
+            updateColorPickerSelection(colorPickerMenu, colorName);
+            
+            // Close the color picker menu
+            const menu = div.closest('.tB5Jxf-xl07Ob-XxIAqe');
+            if (menu) {
+                menu.style.display = 'none';
+            }
         });
 
-        container.appendChild(colorRow);
-        
-        // Check if current event has a custom color and update selection
-        const eventId = colorPickerMenu.getAttribute('data-eid');
-        const currentColorName = eventColorsCache[eventId];
-        if (currentColorName) {
-            updateColorPickerSelection(colorPickerMenu, currentColorName);
-        }
+        colorRow.appendChild(div);
     });
+
+    container.appendChild(colorRow);
+    
+    // Check if current event has a custom color and update selection
+    const eventId = colorPickerMenu.getAttribute('data-eid');
+    const currentColorName = eventColorsCache[eventId];
+    if (currentColorName) {
+        updateColorPickerSelection(colorPickerMenu, currentColorName);
+    }
 }
 
 // Function to handle clicks on Google's official colors
@@ -289,6 +304,10 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
         }
         if (changes.eventColors) {
             eventColorsCache = changes.eventColors.newValue || {};
+            needsCSSUpdate = true;
+        }
+        if (changes.colorOrder) {
+            colorOrderCache = changes.colorOrder.newValue || {};
             needsCSSUpdate = true;
         }
         
