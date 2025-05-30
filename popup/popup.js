@@ -233,3 +233,11 @@ cancelButton.addEventListener("click", () => {
     // set visibility of elements
     hideColorPicker();
 });
+
+if (DEBUG_MODE && typeof addDebugControls === 'function') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', addDebugControls);
+    } else {
+        addDebugControls();
+    }
+}
