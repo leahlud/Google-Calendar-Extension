@@ -91,6 +91,10 @@ function injectCustomColorCSS() {
                     border-bottom-left-radius: 8px !important;
                     border-bottom-right-radius: 8px !important;
                 }
+                /* EVENT POPUP/DETAIL VIEW - Color the square indicator */
+                [data-eventid="${eventId}"] .xnWuge {
+                    background-color: ${hex} !important;
+                }
             `;
         }
     });
