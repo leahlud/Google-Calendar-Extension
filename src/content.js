@@ -1,23 +1,3 @@
-// Function to trigger Google's official color selection to ensure stripe exists
-function setGoogleOfficialColor(eventId) {
-    const colorPickerMenu = document.querySelector(`[data-eid="${eventId}"]`);
-    if (!colorPickerMenu) {
-        console.warn('Could not find color picker for event:', eventId);
-        return false;
-    }
-    
-    // Use Tomato red to ensure stripe is created
-    const tomatoColorElement = colorPickerMenu.querySelector('[data-color="#D50000"]');
-    
-    if (tomatoColorElement) {
-        tomatoColorElement.click();
-        console.log(`Set event ${eventId} to official tomato color`);
-        return true;
-    }
-    
-    console.warn('Could not find tomato color option');
-    return false;
-}
 // for debugging
 console.log("Content script running on:", window.location.href);
 
@@ -26,6 +6,11 @@ let customColorsCache = {};
 let eventColorsCache = {};
 let colorOrderCache = {};
 let injectedCSS = null;
+
+// Simple variables for temporary event editing
+let tempEventId = null;
+let tempColorName = null;
+let tempOfficialColorSelected = false; 
 
 // Initialize cache
 function initializeCache() {
@@ -99,10 +84,156 @@ function injectCustomColorCSS() {
         }
     });
     
+    // Add CSS rules for temporary custom color preview (for event editing)
+    if (tempEventId && tempColorName && customColorsCache[tempColorName]) {
+        const { hex } = customColorsCache[tempColorName];
+        
+        // Color picker button preview in event edit page
+        cssRules += `
+            /* Event edit page - color picker button preview */
+            .DJjYf [jsname="QPiGnd"] {
+                background-color: ${hex} !important;
+            }
+            .DJjYf .kQuqUe {
+                background-color: ${hex} !important;
+            }
+        `;
+    }
+    
     injectedCSS.textContent = cssRules;
     document.head.appendChild(injectedCSS);
     
     console.log('Injected CSS for custom event colors');
+}
+
+/**
+ * Extracts event ID from the current URL if we're on an event edit page
+ * @returns {string|null} The event ID or null if not found
+ */
+function getEventIdFromUrl() {
+    const url = window.location.href;
+    const match = url.match(/\/eventedit\/([^?&#]+)/);
+    return match ? match[1] : null;
+}
+
+/**
+ * Checks if we're currently on an event edit page
+ * @returns {boolean}
+ */
+function isEventEditPage() {
+    return window.location.href.includes('/eventedit/');
+}
+
+/**
+ * Sets a temporary color for the event being edited
+ */
+function setTempEventColor(eventId, colorName) {
+    tempEventId = eventId;
+    tempColorName = colorName;
+    tempOfficialColorSelected = false;
+    
+    // Update the preview button immediately
+    updateEventEditPreview(colorName);
+    
+    // Regenerate CSS to include temp color preview
+    injectCustomColorCSS();
+    
+    console.log(`Temporary color set: ${eventId} -> ${colorName}`);
+}
+
+/**
+ * Updates the color picker button preview in event edit page
+ */
+function updateEventEditPreview(colorName) {
+    if (!customColorsCache[colorName]) return;
+    
+    const { hex } = customColorsCache[colorName];
+    
+    // Update the color picker button preview
+    const colorButton = document.querySelector('.DJjYf [jsname="QPiGnd"]');
+    if (colorButton) {
+        colorButton.style.backgroundColor = hex;
+    }
+    
+    // Update the data-color attribute on the container
+    const container = document.querySelector('.DJjYf');
+    if (container) {
+        container.setAttribute('data-color', hex);
+    }
+}
+
+/**
+ * Gets the current color for an event (temp or permanent)
+ */
+function getCurrentEventColor(eventId) {
+    // If this is the event being edited and has a temp color, return that
+    if (tempEventId === eventId && tempColorName) {
+        return tempColorName;
+    }
+    
+    // Otherwise return permanent color
+    return eventColorsCache[eventId] || null;
+}
+
+/**
+ * Sets Google's official color to tomato (for creating the stripe)
+ */
+function setTomatoColor(eventId) {
+    // Try quick picker first
+    let tomatoElement = document.querySelector(`[data-eid="${eventId}"] [data-color="#D50000"]`);
+    
+    // If not found, try main picker
+    if (!tomatoElement) {
+        tomatoElement = document.querySelector('[data-color="#D50000"][role="menuitemradio"]');
+    }
+    
+    if (tomatoElement) {
+        console.log('Clicking tomato to set official color');
+        tomatoElement.click();
+        return true;
+    }
+    
+    console.warn('Could not find tomato color element');
+    return false;
+}
+
+/**
+ * Observes save button to commit temporary colors
+ */
+function observeSaveButton() {
+    const observer = new MutationObserver(() => {
+        const saveButton = document.querySelector('button[jsname="x8hlje"]');
+        if (saveButton && !saveButton.hasAttribute('data-observer-added')) {
+            saveButton.setAttribute('data-observer-added', 'true');
+            
+            saveButton.addEventListener('click', () => {
+                const currentEventId = getEventIdFromUrl();
+                
+                if (currentEventId) {
+                    if (tempEventId && tempColorName) {
+                        // Commit temporary custom color
+                        console.log(`Save clicked - committing temp color: ${tempEventId} -> ${tempColorName}`);
+                        addEventColorMapping(tempEventId, tempColorName);
+                    } else if (tempOfficialColorSelected) {
+                        // Remove custom color mapping since official color was selected
+                        if (eventColorsCache[currentEventId]) {
+                            console.log(`Save clicked - removing custom color mapping for event ${currentEventId} (official color selected)`);
+                            removeEventColorMapping(currentEventId);
+                        }
+                    }
+                }
+                
+                // Clear all temp variables
+                tempEventId = null;
+                tempColorName = null;
+                tempOfficialColorSelected = false;
+            });
+            
+            console.log('Save button observer added');
+        }
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function addEventColorMapping(eventId, colorName) {
@@ -151,15 +282,32 @@ function addExtensionColors(container) {
     // check if already inserted to prevent double injection
     if (container.querySelector('.custom-color-injected')) return;
 
-    // Check if this is specifically an EVENT color picker, not a calendar color picker
-    // TODO: doesnt work for editing events
-    const colorPickerMenu = container.closest('[data-eid]');
-    if (!colorPickerMenu) {
+    // Declare eventId once at the top of the function
+    let eventId = null;
+
+    // Detect event color pickers
+    const isQuickEventPicker = container.closest('[data-eid]');
+    const isMainEventPicker = container.closest('[role="menu"]') && 
+                             !container.closest('[jsname="lePJ0e"]') && 
+                             !container.querySelector('[aria-label*="calendar color"]');
+
+    if (!isQuickEventPicker && !isMainEventPicker) {
         console.log('Skipping color injection - not an event color picker');
         return;
     }
 
     console.log('Adding custom colors to event color picker');
+
+    // Determine the color picker menu for later use
+    const colorPickerMenu = isQuickEventPicker || container.closest('[role="menu"]');
+
+    // Get event ID based on picker type
+    if (isQuickEventPicker) {
+        eventId = isQuickEventPicker.getAttribute('data-eid');
+    } else if (isMainEventPicker) {
+        eventId = getEventIdFromUrl();
+        console.log('Main event picker - extracted event ID from URL:', eventId);
+    }
 
     var colorsPerRow = container.parentElement.getAttribute("data-colors-per-row");
     var colorRowIndex = 1;
@@ -202,26 +350,41 @@ function addExtensionColors(container) {
 
         // Click handling for color selection
         div.addEventListener('click', () => {
-            const eventId = colorPickerMenu.getAttribute('data-eid');
+            let currentEventId = eventId;
             
-            console.log(`Event ${eventId} mapped to custom color: ${colorName}`);
+            if (!currentEventId) {
+                if (isQuickEventPicker) {
+                    currentEventId = isQuickEventPicker.getAttribute('data-eid');
+                } else if (isMainEventPicker) {
+                    currentEventId = getEventIdFromUrl();
+                }
+            }
             
-            // Set to official color first to ensure stripe exists, then apply custom color
-            setGoogleOfficialColor(eventId);
-            addEventColorMapping(eventId, colorName);
+            if (!currentEventId) {
+                console.log('No event ID found');
+                return;
+            }
+            
+            console.log(`Custom color clicked: ${colorName} for event ${currentEventId}`);
+            
+            // ALWAYS set tomato first (this makes Google think an official color was selected)
+            setTomatoColor(currentEventId);
+            
+            if (isEventEditPage()) {
+                // Main picker: Set temporary color (will be committed on save)
+                setTempEventColor(currentEventId, colorName);
+                console.log('Main picker - set temporary color, will commit on save');
+            } else {
+                // Quick picker: Apply custom color immediately
+                addEventColorMapping(currentEventId, colorName);
+                console.log('Quick picker - applied custom color immediately');
+            }
             
             // Update color picker selection visual state
             updateColorPickerSelection(colorPickerMenu, colorName);
-            
-            // Close the color picker menu
-            const menu = div.closest('.tB5Jxf-xl07Ob-XxIAqe');
-            if (menu) {
-                menu.style.display = 'none';
-            }
         });
 
         while (colorRow.children.length >= colorsPerRow) {
-
             // check if a new row needs to be created 
             if (colorRowIndex == container.children.length - 1) {
                 colorRow = document.createElement('div');
@@ -233,28 +396,67 @@ function addExtensionColors(container) {
         }
 
         colorRow.appendChild(div);
-        
     });
 
     // Check if current event has a custom color and update selection
-    const eventId = colorPickerMenu.getAttribute('data-eid');
-    const currentColorName = eventColorsCache[eventId];
-    if (currentColorName) {
-        updateColorPickerSelection(colorPickerMenu, currentColorName);
+    if (eventId) {
+        const currentColorName = getCurrentEventColor(eventId);
+        if (currentColorName) {
+            updateColorPickerSelection(colorPickerMenu, currentColorName);
+            
+            // If we're on event edit page, also update the preview
+            if (isEventEditPage()) {
+                updateEventEditPreview(currentColorName);
+            }
+        }
     }
 }
 
 // Function to handle clicks on Google's official colors
 function handleOfficialColorClick(colorElement) {
-    const colorPickerMenu = colorElement.closest('[data-eid]');
+    // Try to find the color picker with data-eid first (quick picker)
+    let colorPickerMenu = colorElement.closest('[data-eid]');
+    let eventId = null;
+    let isQuickPicker = false;
+    
     if (colorPickerMenu) {
-        const eventId = colorPickerMenu.getAttribute('data-eid');
-        
-        // Remove custom color mapping when official color is selected
+        // Quick picker case
+        eventId = colorPickerMenu.getAttribute('data-eid');
+        isQuickPicker = true;
+    } else {
+        // Main picker case - get event ID from URL
+        eventId = getEventIdFromUrl();
+        colorPickerMenu = colorElement.closest('[role="menu"]');
+        isQuickPicker = false;
+    }
+    
+    if (!eventId) return;
+    
+    if (isQuickPicker) {
+        // Quick picker: remove custom color mapping immediately from database
         if (eventColorsCache[eventId]) {
-            console.log(`Removed custom color mapping for event ${eventId}`);
+            console.log(`Removed custom color mapping for event ${eventId} (quick picker)`);
             removeEventColorMapping(eventId);
         }
+        
+        // Also clear temp color if it's the same event
+        if (tempEventId === eventId) {
+            tempEventId = null;
+            tempColorName = null;
+            injectCustomColorCSS();
+        }
+    } else {
+        // Main picker: clear temporary color and mark that official color was selected
+        if (tempEventId === eventId) {
+            tempEventId = null;
+            tempColorName = null;
+            injectCustomColorCSS(); // Update preview to show official color
+            console.log(`Cleared temporary custom color for event ${eventId} (main picker)`);
+        }
+        
+        // Mark that an official color was selected (will be processed on save)
+        tempOfficialColorSelected = true;
+        console.log(`Official color selected for event ${eventId} (main picker) - will remove custom mapping on save`);
     }
 }
 
@@ -277,6 +479,7 @@ const observer = new MutationObserver((mutations) => {
                 addExtensionColors(colorGrid.parentElement);
                 
                 // Add click listeners to official colors
+                // Look for official colors (ones without data-color-name attribute)
                 const officialColors = colorGrid.parentElement.querySelectorAll('.A1wrjc:not([data-color-name])');
                 officialColors.forEach(colorElement => {
                     colorElement.addEventListener('click', () => handleOfficialColorClick(colorElement));
@@ -293,6 +496,9 @@ function initialize() {
     
     // Start observing
     observer.observe(document.body, { childList: true, subtree: true });
+    
+    // Observe save button for committing temp colors
+    observeSaveButton();
 }
 
 // Listen for storage changes to update cache and CSS
@@ -331,6 +537,14 @@ let currentUrl = window.location.href;
 setInterval(() => {
     if (window.location.href !== currentUrl) {
         currentUrl = window.location.href;
+        
+        // Clear temp variables if we're no longer on an edit page
+        if (!isEventEditPage()) {
+            tempEventId = null;
+            tempColorName = null;
+            tempOfficialColorSelected = false; 
+        }
+        
         console.log('URL changed, regenerating CSS');
         injectCustomColorCSS();
     }
