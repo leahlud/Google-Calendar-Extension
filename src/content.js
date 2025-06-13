@@ -45,9 +45,9 @@ function injectCustomColorCSS() {
             
             // CSS rules for this specific event ID
             cssRules += `
-                /* All-day events - DON'T touch .o4Z98 or .pmUZFe (that's the stripe) */
+                /* All-day events - DON'T touch .o4Z98 or .pmUZFe (that's the stripe) and DON'T touch .smECzc (ranged events in month view) */
                 /* Only color the main content area */
-                [data-eventid="${eventId}"][data-stacked-layout-chip-container] .KF4T6b,
+                [data-eventid="${eventId}"][data-stacked-layout-chip-container] .KF4T6b:not(.smECzc),
                 [data-eventid="${eventId}"][data-stacked-layout-chip-container] .UflSff {
                     background-color: ${hex} !important;
                     color: ${textColor} !important;
@@ -71,14 +71,21 @@ function injectCustomColorCSS() {
                     /* location */
                     color: ${textColor} !important;
                 } 
+
                 /* Resize handle - don't apply background color to preserve stripe */
                 [data-eventid="${eventId}"].GTG3wb .leOeGd {
                     border-bottom-left-radius: 8px !important;
                     border-bottom-right-radius: 8px !important;
                 }
+
                 /* EVENT POPUP/DETAIL VIEW - Color the square indicator */
                 [data-eventid="${eventId}"] .xnWuge {
                     background-color: ${hex} !important;
+                }
+
+                /* MONTH VIEW */
+                [data-eventid="${eventId}"] .VlNR9e {
+                    border-color: ${hex} !important;
                 }
             `;
         }
