@@ -83,7 +83,7 @@ function injectCustomColorCSS() {
                     background-color: ${hex} !important;
                 }
 
-                /* MONTH VIEW */
+                /* MONTH VIEW - color the circle for ranged events */
                 [data-eventid="${eventId}"] .VlNR9e {
                     border-color: ${hex} !important;
                 }
