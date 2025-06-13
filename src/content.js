@@ -87,6 +87,11 @@ function injectCustomColorCSS() {
                 [data-eventid="${eventId}"] .VlNR9e {
                     border-color: ${hex} !important;
                 }
+
+                /* SCHEDULE VIEW - color the circle for events */
+                [data-eventid="${eventId}"] .poxnAc {
+                    border-color: ${hex} !important;
+                }
             `;
         }
     });
