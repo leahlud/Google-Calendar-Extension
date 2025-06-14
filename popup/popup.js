@@ -1,17 +1,20 @@
 const colorGrid = document.querySelector(".color-grid");
-
 const addColor = document.querySelector(".color-option.add-color");
-const clearColors = document.querySelector(".clear-actions");
 
-const pickerContainer = document.getElementById('pickerContainer');
-const colorDetails = document.getElementById('colorDetails');
-const hexInput = document.getElementById('hexInput');
-const textColorSelect = document.getElementById('textColorSelect');
-const colorNameInput = document.getElementById('colorNameInput');
+const pickerContainer = document.getElementById("pickerContainer");
+const colorDetails = document.getElementById("colorDetails");
+const hexInput = document.getElementById("hexInput");
+const textColorSelect = document.getElementById("textColorSelect");
+const colorNameInput = document.getElementById("colorNameInput");
 
-const colorActions = document.querySelector('.color-actions');
-const saveButton = document.getElementById('saveColor');
-const cancelButton = document.getElementById('cancelColor');
+const colorActions = document.querySelector(".color-actions");
+const saveButton = document.getElementById("saveColor");
+const cancelButton = document.getElementById("cancelColor");
+
+const clearActions = document.querySelector(".clear-actions");
+const removeColors = document.getElementById("clearColors");
+const uncolorEvents = document.getElementById("clearEvents");
+
 
 let colorPicker;
 
@@ -22,20 +25,20 @@ populateColorGrid()
  * Displays the custom color picker UI.
  */
 function showColorPicker() {
-    pickerContainer.style.display = 'flex';
-    colorDetails.style.display = 'flex';
-    colorActions.style.display = 'flex';
-    clearColors.style.display = 'none';
+    pickerContainer.style.display = "flex";
+    colorDetails.style.display = "flex";
+    colorActions.style.display = "flex";
+    clearActions.style.display = "none";
 }
 
 /**
  * Hides the custom color picker UI.
  */
 function hideColorPicker() {
-    pickerContainer.style.display = 'none';
-    colorDetails.style.display = 'none';
-    colorActions.style.display = 'none';
-    clearColors.style.display = 'flex';
+    pickerContainer.style.display = "none";
+    colorDetails.style.display = "none";
+    colorActions.style.display = "none";
+    clearActions.style.display = "flex";
 }
 
 /**
@@ -147,14 +150,23 @@ function populateColorGrid() {
 }
 
 /**
- * Add click listener to clear button for removing user's color palette.
+ * Add click listener to clear palette button for removing user's color palette.
  */
-clearColors.addEventListener("click", () => {
+removeColors.addEventListener("click", () => {
     if (confirm("Are you sure you want to delete all saved colors?")) {
         chrome.storage.local.remove(["customColors", "colorOrder"], () => {
             // refresh grid after clearing
             populateColorGrid();
         });
+    }
+});
+
+/**
+ * Add click listener to uncolor events button for removing custom event colorings.
+ */
+uncolorEvents.addEventListener("click", () => {
+    if (confirm("Are you sure you want to remove all event colorings?")) {
+        chrome.storage.local.remove(["eventColors"]);
     }
 });
 
@@ -167,14 +179,14 @@ addColor.addEventListener("click", () => {
 
     // create the color picker only once
     if (!colorPicker) {
-        colorPicker = new iro.ColorPicker('#pickerContainer', {
+        colorPicker = new iro.ColorPicker("#pickerContainer", {
             width: 150,
             color: "#FF0000", // default to red
             handleRadius: 9
         });
 
         // update hex value in input when new color is picked
-        colorPicker.on('color:change', function (color) {
+        colorPicker.on("color:change", function (color) {
             hexInput.value = color.hexString;
         });
 
@@ -235,9 +247,9 @@ cancelButton.addEventListener("click", () => {
 
 const DEBUG_MODE = true;
 
-if (DEBUG_MODE && typeof addDebugControls === 'function') {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', addDebugControls);
+if (DEBUG_MODE && typeof addDebugControls === "function") {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", addDebugControls);
     } else {
         addDebugControls();
     }
