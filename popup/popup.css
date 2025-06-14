@@ -13,25 +13,26 @@ body {
 }
 
 .custom-color-picker {
-  width: 280px;
+  width: 264px;
 }
 
 /* text and icons */
 
 .popup-title {
-  padding: 24px 28px 14px 24px;
-  font-size: 16px;
-  font-weight: 600;
+  padding: 14px 32px 14px 24px;
+  font-size: 17px;
+  font-weight: 500;
 }
 
 /* colors */
 
 .color-grid {
-  border-bottom: 1.5px solid #dce0e6;
-  padding: 0 30px 22px 30px;
+  border-top: 1.75px solid #dce0e6;
+  border-bottom: 1.75px solid #dce0e6;
+  padding: 30px 36px 30px 36px;
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 8px;
 }
 
 .color-option {
@@ -39,8 +40,8 @@ body {
   justify-content: center;
   align-items: center;
   font-size: 10px;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   cursor: pointer;
 }
@@ -82,12 +83,12 @@ body {
 
 [data-title]:after {
   content: attr(data-title);
-  background-color: #676666e4;
+  background-color: #535151c7;
   color: #FFFFFF;
   font-size: 9px;
   font-weight: 600;
   position: absolute;
-  padding: 2px 5px 2.5px 5px;
+  padding: 3px 5px 2.5px 5px;
   bottom: 125%;
   left: 50%;
   transform: translateX(-50%);
@@ -195,9 +196,9 @@ body {
 .clear-actions {
   display: flex;
   flex-direction: row;
-  justify-content: left;
+  justify-content: center;
   gap: 10px;
-  padding: 12px 0 12px 28px;
+  padding: 16px 0;
 }
 
 .clear-actions button {

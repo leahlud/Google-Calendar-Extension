@@ -5,14 +5,12 @@
   <link rel="stylesheet" href="popup.css">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=delete" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 </head>
 
 <body>
   <div class="custom-color-picker">
-    <div class="popup-title">Choose Custom Colors</div>
+    <div class="popup-title">Custom Colors</div>
     <div class="color-grid">
       <!-- example color options -->
       <div class="color-option" tabindex="0" style="background-color: #ff6f61;" data-color="#ff6f61"
@@ -25,7 +23,7 @@
       </div>
 
       <!-- add custom color button -->
-      <div class="color-option add-color" data-title="Add custom color">+</div>
+      <div class="color-option add-color" data-title="Add color">+</div>
     </div>
 
     <!-- color, text color, and color name selection -->
@@ -46,7 +44,7 @@
 
       <label>
         Name:
-        <input type="text" id="colorNameInput" maxlength="20" placeholder="Color name">
+        <input type="text" id="colorNameInput" maxlength="15" placeholder="Color name">
       </label>
     </div>
 
@@ -63,7 +61,7 @@
         <span>Clear Palette</span>
       </button>
       <button id="clearEvents">
-        <span class="material-symbols-outlined">delete</span>
+        <span class="material-symbols-outlined">format_color_reset</span>
         <span>Uncolor Events</span>
       </button>
     </div>

@@ -98,7 +98,6 @@ function addColorToGrid(hex, textColor, colorName) {
     div.setAttribute("data-title", colorName);
     div.setAttribute("aria-label", `Color: ${colorName}`); // for accessibility
     div.setAttribute("role", "button"); // for accessibility
-    div.setAttribute("title", colorName);
 
 
     const hoverText = document.createElement("span");
