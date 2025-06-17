@@ -197,38 +197,18 @@ function getCurrentEventColor(eventId) {
     return eventColorsCache[eventId] || null;
 }
 
-
-/**
- * Converts hex to RGB array
- */
-function hexToRgb(hex) {
-    // remove the "#"
-    var hexValue = hex.replace('#', '');
-
-    // parse each of the rgb channels
-    var r = parseInt(hexValue.slice(0, 2), 16);
-    var g = parseInt(hexValue.slice(2, 4), 16);
-    var b = parseInt(hexValue.slice(4, 6), 16);
-    return [r, g, b];
-}
-
 /**
  * Calculates the closest match with Google's default color palette
  */
 function getClosestGoogleColor(hex) {
-    // convert the given hex color to rgb
-    const rgb = hexToRgb(hex);
-    console.log(`DEBUG1: ${rgb}`)
-
-    // initialize closest color to first in list
+    // initialize closest color to first in official Google colors list
     let closestColor = googleColors[0];
     let minDistance = Infinity;
 
+    // find the best matching Google color
     for (const [googleHex, googleRgb] of googleColors) {
-        // compute the euclidean distance between the colors
-        const distance = (rgb[0] - googleRgb[0])**2 + 
-                         (rgb[1] - googleRgb[1])**2 + 
-                         (rgb[2] - googleRgb[2])**2;
+        // compute the CIE color difference the colors using chroma.js
+        const distance = chroma.deltaE(hex, googleHex);
 
         if (distance < minDistance) {
             minDistance = distance;
