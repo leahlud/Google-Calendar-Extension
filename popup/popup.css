@@ -16,18 +16,29 @@ body {
   width: 264px;
 }
 
-/* text and icons */
+/* title and icon  */
+
+.top-bar {
+  border-bottom: 1.75px solid #dce0e6;
+  display: flex;
+  align-items: center;
+  padding: 14px 32px 14px 24px;
+  gap: 6px;
+}
+
+.top-bar .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
+}
 
 .popup-title {
-  padding: 14px 32px 14px 24px;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
 }
 
 /* colors */
 
 .color-grid {
-  border-top: 1.75px solid #dce0e6;
   border-bottom: 1.75px solid #dce0e6;
   padding: 30px 36px 30px 36px;
   display: flex;

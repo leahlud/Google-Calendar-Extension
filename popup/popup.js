@@ -29,6 +29,7 @@ function showColorPicker() {
     colorDetails.style.display = "flex";
     colorActions.style.display = "flex";
     clearActions.style.display = "none";
+    colorGrid.style.display = "none";
 }
 
 /**
@@ -39,6 +40,7 @@ function hideColorPicker() {
     colorDetails.style.display = "none";
     colorActions.style.display = "none";
     clearActions.style.display = "flex";
+    colorGrid.style.display = "flex";
 }
 
 /**

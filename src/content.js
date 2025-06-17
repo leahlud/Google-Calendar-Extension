@@ -7,6 +7,16 @@ let eventColorsCache = {};
 let colorOrderCache = {};
 let injectedCSS = null;
 
+// Array of official Google colors for selecting closest match
+const googleColors = [
+    ["#D50000", [213, 0, 0]], ["#E67C73", [230, 124, 115]],
+    ["#F4511E", [244, 81, 30]], ["#F6BF26", [246, 191, 38]],
+    ["#33B679", [51, 182, 121]], ["#0B8043", [11, 128, 67]],
+    ["#039BE5", [3, 155, 229]], ["#3F51B5", [63, 81, 181]],
+    ["#7986CB", [121, 134, 203]], ["#8E24AA", [142, 36, 170]],
+    ["#616161", [97, 97, 97]]
+];
+
 // Simple variables for temporary event editing
 let tempEventId = null;
 let tempColorName = null;
@@ -188,24 +198,49 @@ function getCurrentEventColor(eventId) {
 }
 
 /**
- * Sets Google's official color to tomato (for creating the stripe)
+ * Calculates the closest match with Google's default color palette
  */
-function setTomatoColor(eventId) {
+function getClosestGoogleColor(hex) {
+    // initialize closest color to first in official Google colors list
+    let closestColor = googleColors[0];
+    let minDistance = Infinity;
+
+    // find the best matching Google color
+    for (const [googleHex, googleRgb] of googleColors) {
+        // compute the CIE color difference the colors using chroma.js
+        const distance = chroma.deltaE(hex, googleHex);
+
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestColor = [googleHex, googleRgb];
+        }
+    }
+
+    // return the hex color of the closest Google color
+    return closestColor[0];
+}
+
+/**
+ * Sets Google's official color to the closest match (for creating the stripe)
+ */
+function setOfficialColor(eventId, officialHex) {
+    console.log(`OFFICIAL COLOR: ${officialHex}`);
+    console.log(`[data-color="${officialHex}"][role="menuitemradio"]`);
     // Try quick picker first
-    let tomatoElement = document.querySelector(`[data-eid="${eventId}"] [data-color="#D50000"]`);
+    let officialElement = document.querySelector(`[data-eid="${eventId}"] [data-color="${officialHex}"]`);
     
     // If not found, try main picker
-    if (!tomatoElement) {
-        tomatoElement = document.querySelector('[data-color="#D50000"][role="menuitemradio"]');
+    if (!officialElement) {
+        officialElement = document.querySelector(`[data-color="${officialHex}"][role="menuitemradio"]`);
     }
     
-    if (tomatoElement) {
-        console.log('Clicking tomato to set official color');
-        tomatoElement.click();
+    if (officialElement) {
+        console.log(`Clicking ${officialHex} to set official color`);
+        officialElement.click();
         return true;
     }
     
-    console.warn('Could not find tomato color element');
+    console.warn(`Could not find ${officialHex} color element`);
     return false;
 }
 
@@ -379,8 +414,9 @@ function addExtensionColors(container) {
             
             console.log(`Custom color clicked: ${colorName} for event ${currentEventId}`);
             
-            // ALWAYS set tomato first (this makes Google think an official color was selected)
-            setTomatoColor(currentEventId);
+            // ALWAYS set official Google color first (so Google back-end registers it for the stripe)
+            const closestOfficialHex = getClosestGoogleColor(hex); 
+            setOfficialColor(currentEventId, closestOfficialHex);
             
             if (isEventEditPage()) {
                 // Main picker: Set temporary color (will be committed on save)
